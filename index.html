@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShiftHappens — Duke Shift Handover Generator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="app-header">
+      <h1 class="app-title">Shift<span class="title-accent">Happens</span></h1>
+      <p class="app-tagline">Paste Excel incident data and generate a formatted shift handover email</p>
+    </header>
+
+    <main class="app-main">
+      <!-- Input Section -->
+      <section class="card glass-card input-card">
+        <h2 class="card-title">Input</h2>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="current-shift">Current Shift</label>
+            <div class="select-wrapper">
+              <select id="current-shift" class="form-control form-select">
+                <option value="1">Shift 1</option>
+                <option value="2" selected>Shift 2</option>
+                <option value="3">Shift 3</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="user-name">Your Name</label>
+            <input type="text" id="user-name" class="form-control" value="Adarsh" placeholder="Enter your name">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="incident-data">Incident Data <span class="label-hint">(paste rows copied from Excel)</span></label>
+          <div
+            id="incident-data"
+            class="paste-area"
+            contenteditable="true"
+            role="textbox"
+            aria-multiline="true"
+            data-placeholder="Paste tab-separated Excel rows here…&#10;&#10;Example:&#10;Shift 2	INC5260497	On Hold	High	OUTAGE MANAGEMENT SYSTEM SUPPORT - CAROLINA WEST		DEC	Ankita"
+          ></div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" id="btn-generate" class="btn btn-primary">
+            <span class="btn-icon">✉</span>
+            Generate Handover
+          </button>
+          <button type="button" id="btn-copy" class="btn btn-secondary" disabled>
+            <span class="btn-icon">📋</span>
+            Copy Email
+          </button>
+        </div>
+
+        <div id="status-message" class="status-message" role="status" aria-live="polite"></div>
+      </section>
+
+      <!-- Email Preview Section -->
+      <section class="card glass-card preview-card">
+        <h2 class="card-title">Email Preview</h2>
+        <div class="preview-wrapper">
+          <div id="email-preview" class="email-preview-surface">
+            <p class="preview-placeholder">Click <strong>Generate Handover</strong> to preview the email here.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>Vibecoded with fun by Adarsh Gupta 🗿</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
