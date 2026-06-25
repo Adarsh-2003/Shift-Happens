@@ -57,6 +57,11 @@ const STATIC_UPDATES_HIGHLIGHT = [
   'Please read internal help desk DEF group message',
 ];
 
+const SIDE = {
+  CTS: 'cts',
+  DUKE: 'duke',
+};
+
 /* ============================================
    DOM References
    ============================================ */
@@ -65,6 +70,7 @@ const els = {
   currentShift: document.getElementById('current-shift'),
   userName: document.getElementById('user-name'),
   incidentData: document.getElementById('incident-data'),
+  sideToggle: document.querySelector('.side-toggle'),
   btnGenerate: document.getElementById('btn-generate'),
   btnCopy: document.getElementById('btn-copy'),
   emailPreview: document.getElementById('email-preview'),
@@ -73,6 +79,8 @@ const els = {
 
 /** Holds the last generated email HTML for clipboard copy */
 let generatedEmailHtml = '';
+/** Currently selected email side — default CTS (Cognizant / Gmail) */
+let selectedSide = SIDE.CTS;
 
 /* ============================================
    Shift Logic
@@ -368,8 +376,9 @@ function fmtCount(n) {
 
 /**
  * Builds the main Shift Handover Report table HTML.
+ * @param {boolean} forOutlook - Adds Outlook-friendly spacing when true (Duke Side).
  */
-function buildMainTable(counts, jurisdictions) {
+function buildMainTable(counts, jurisdictions, forOutlook = false) {
   const priorityRows = PRIORITIES.map((priority) => {
     const c = counts[priority];
     return `
@@ -397,8 +406,10 @@ function buildMainTable(counts, jurisdictions) {
 
   const t = counts.totals;
 
+  const tableMargin = forOutlook ? 'margin-bottom:0' : 'margin-bottom:12pt';
+
   return `
-    <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;max-width:730pt;margin-bottom:12pt">
+    <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;max-width:730pt;${tableMargin}">
       <tbody>
         <tr>
           <td style="${cellStyle(COLORS.headerOrange, 'width:67pt;height:21pt')}"></td>
@@ -503,11 +514,22 @@ function buildListItems(items, highlight = false) {
 }
 
 /**
- * Builds the informational table (Notes, Updates, Action items).
+ * Spacer between tables — Outlook ignores margins but respects line-height blocks.
  */
-function buildInfoTable() {
+function buildOutlookTableSpacer() {
   return `
-    <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;margin-top:6pt">
+    <!--[if mso]><br style="mso-special-character:line-break" /><br style="mso-special-character:line-break" /><![endif]-->
+    <div style="line-height:16pt;font-size:16pt;mso-line-height-rule:exactly;">&nbsp;</div>`;
+}
+
+/**
+ * Builds the informational table (Notes, Updates, Action items).
+ * @param {boolean} forOutlook - Adjusts top spacing for Outlook (Duke Side).
+ */
+function buildInfoTable(forOutlook = false) {
+  const topMargin = forOutlook ? 'margin-top:0' : 'margin-top:6pt';
+  return `
+    <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;${topMargin}">
       <tbody>
         <tr>
           <td rowspan="2" style="${cellStyle(COLORS.actionOrange)}">
@@ -539,31 +561,46 @@ function buildInfoTable() {
 
 /**
  * Assembles the complete handover email HTML.
+ * @param {string} side - SIDE.CTS (Gmail) or SIDE.DUKE (Outlook).
  */
-function generateEmailHtml(handoverShift, userName, counts, jurisdictions) {
-  const linkBlock = `
+function generateEmailHtml(handoverShift, userName, counts, jurisdictions, side = SIDE.CTS) {
+  const isDuke = side === SIDE.DUKE;
+
+  const linkBlock = isDuke
+    ? ''
+    : `
     <p style="margin:0 0 12pt">
       <a href="${DAILY_REPORT_LINK}" target="_blank" style="color:blue;font-family:Calibri,sans-serif;font-size:12pt;background-color:rgb(243,242,241)">
         <b><u>&nbsp;DUKE_SHIFT HANDOVER.xlsx</u></b>
       </a>
     </p>`;
 
-  const greeting = `
+  const greeting = isDuke
+    ? `
+    <p style="margin:0 0 4pt;font-family:Calibri,sans-serif;font-size:11pt;color:black">Hi Sunil / Mohit,</p>
+    <p style="margin:0 0 12pt;font-family:Calibri,sans-serif;font-size:11pt;color:black">Please find the below DCC Daily Report.</p>`
+    : `
     <p style="margin:0 0 4pt;font-family:Calibri,sans-serif;color:black">Hi Team,</p>
     <p style="margin:0 0 12pt;font-family:Calibri,sans-serif;color:black">Please find below the handover for Shift ${handoverShift}</p>`;
 
-  const mainTable = buildMainTable(counts, jurisdictions);
-  const infoTable = buildInfoTable();
+  const mainTable = buildMainTable(counts, jurisdictions, isDuke);
+  const tableSpacer = isDuke ? buildOutlookTableSpacer() : '';
+  const infoTable = buildInfoTable(isDuke);
 
   const signature = `
     <p style="margin:16pt 0 4pt;font-family:Calibri,sans-serif;color:black">Thanks and Regards,</p>
     <p style="margin:0;font-family:Calibri,sans-serif;color:black"><b>${escapeHtml(userName)}</b></p>`;
 
+  const wrapperFont = isDuke
+    ? 'font-family:Calibri,Aptos,sans-serif;font-size:11pt;color:black'
+    : 'font-family:Calibri,Arial,sans-serif;font-size:12pt;color:black';
+
   return `
-    <div style="font-family:Calibri,Arial,sans-serif;font-size:12pt;color:black">
+    <div style="${wrapperFont}">
       ${linkBlock}
       ${greeting}
       ${mainTable}
+      ${tableSpacer}
       ${infoTable}
       ${signature}
     </div>`;
@@ -667,14 +704,15 @@ function handleGenerate() {
   const rawText = getPasteAreaText(els.incidentData);
 
   const { counts, jurisdictions, incidents, warnings } = parseIncidents(rawText);
-  generatedEmailHtml = generateEmailHtml(handoverShift, userName, counts, jurisdictions);
+  generatedEmailHtml = generateEmailHtml(handoverShift, userName, counts, jurisdictions, selectedSide);
 
   els.emailPreview.innerHTML = generatedEmailHtml;
   els.btnCopy.disabled = false;
 
+  const sideLabel = selectedSide === SIDE.DUKE ? 'Duke (Outlook)' : 'CTS (Gmail)';
   const incidentSummary = incidents.length
-    ? `Parsed ${incidents.length} incident(s). Handover for Shift ${handoverShift} generated.`
-    : `Handover for Shift ${handoverShift} generated (no incidents parsed).`;
+    ? `Parsed ${incidents.length} incident(s). ${sideLabel} handover for Shift ${handoverShift} generated.`
+    : `${sideLabel} handover for Shift ${handoverShift} generated (no incidents parsed).`;
 
   if (warnings.length) {
     showStatus(`${incidentSummary} ${warnings.join(' ')}`, warnings.length && incidents.length === 0 ? 'error' : 'success');
@@ -691,10 +729,24 @@ async function handleCopy() {
 
   try {
     await copyRichHtml(generatedEmailHtml);
-    showStatus('Email copied! Paste directly into Gmail to preserve formatting.', 'success');
+    const pasteTarget = selectedSide === SIDE.DUKE ? 'Outlook' : 'Gmail';
+    showStatus(`Email copied! Paste directly into ${pasteTarget} to preserve formatting.`, 'success');
   } catch (err) {
     showStatus(`Copy failed: ${err.message}. Try using Chrome or Edge.`, 'error');
   }
+}
+
+function handleSideToggle(event) {
+  const btn = event.target.closest('.side-toggle-btn');
+  if (!btn) return;
+
+  selectedSide = btn.dataset.side === SIDE.DUKE ? SIDE.DUKE : SIDE.CTS;
+
+  els.sideToggle.querySelectorAll('.side-toggle-btn').forEach((b) => {
+    const isActive = b === btn;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-pressed', String(isActive));
+  });
 }
 
 /* ============================================
@@ -704,6 +756,7 @@ async function handleCopy() {
 function init() {
   els.btnGenerate.addEventListener('click', handleGenerate);
   els.btnCopy.addEventListener('click', handleCopy);
+  els.sideToggle.addEventListener('click', handleSideToggle);
 
   // Prevent rich formatting inside the paste area — keep plain TSV text
   els.incidentData.addEventListener('paste', (e) => {

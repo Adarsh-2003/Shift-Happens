@@ -156,6 +156,96 @@ body {
   letter-spacing: 0;
 }
 
+/* ---- Side Toggle (CTS / Duke) ---- */
+
+.side-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.side-toggle-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.side-toggle {
+  position: relative;
+  display: inline-flex;
+  width: auto;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.side-toggle-btn {
+  position: relative;
+  z-index: 1;
+  padding: 0.42rem 1.15rem;
+  min-width: 4.5rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.side-toggle-btn:hover:not(.active) {
+  color: var(--text-secondary);
+}
+
+.side-toggle-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--purple-accent) 0%, #6d28d9 100%);
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.side-toggle-btn:active:not(.active) {
+  transform: scale(0.97);
+}
+
+.side-toggle-btn:focus-visible {
+  outline: 2px solid var(--purple-light);
+  outline-offset: 2px;
+}
+
+/* ---- Easter egg (intentionally subtle) ---- */
+
+.egg {
+  position: fixed;
+  top: 6px;
+  left: 6px;
+  width: 52px;
+  height: 52px;
+  opacity: 0.035;
+  z-index: 50;
+  cursor: default;
+  border-radius: 50%;
+  background: transparent;
+  transition: opacity 0.4s ease;
+}
+
+.egg:hover {
+  opacity: 0.12;
+  cursor: pointer;
+}
+
 .form-control {
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid var(--glass-border);

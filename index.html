@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShiftHappens — Duke Shift Handover Generator</title>
+  <title>ShiftHappens</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
 <body>
   <div class="app-wrapper">
     <header class="app-header">
-      <h1 class="app-title">Shift<span class="title-accent">Happens</span></h1>
+      <h1 class="app-title">ShiftHappens</h1>
       <p class="app-tagline">Paste Excel incident data and generate a formatted shift handover email</p>
     </header>
 
@@ -21,6 +21,14 @@
       <!-- Input Section -->
       <section class="card glass-card input-card">
         <h2 class="card-title">Input</h2>
+
+        <div class="side-toggle-group">
+          <label class="side-toggle-label">Email Side</label>
+          <div class="side-toggle" role="group" aria-label="Email side">
+            <button type="button" class="side-toggle-btn active" data-side="cts" aria-pressed="true">CTS</button>
+            <button type="button" class="side-toggle-btn" data-side="duke" aria-pressed="false">Duke</button>
+          </div>
+        </div>
 
         <div class="form-grid">
           <div class="form-group">
@@ -48,7 +56,7 @@
             contenteditable="true"
             role="textbox"
             aria-multiline="true"
-            data-placeholder="Paste tab-separated Excel rows here…&#10;&#10;Example:&#10;Shift 2	INC5260497	On Hold	High	OUTAGE MANAGEMENT SYSTEM SUPPORT - CAROLINA WEST		DEC	Ankita"
+            data-placeholder="Paste tab-separated Excel rows here…&#10;&#10;Example:&#10;Shift 2	INC5XXXXXX	On Hold	High	OUTAGE MANAGEMENT SYSTEM SUPPORT - CAROLINA WEST		DEC	Adarsh"
           ></div>
         </div>
 
@@ -81,6 +89,8 @@
       <p>Vibecoded with fun by Adarsh Gupta 🗿</p>
     </footer>
   </div>
+
+  <a href="https://qsneub.vercel.app/" target="_blank" rel="noopener noreferrer" class="egg" aria-hidden="true" tabindex="-1"></a>
 
   <script src="script.js"></script>
 </body>
