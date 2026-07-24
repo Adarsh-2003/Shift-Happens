@@ -122,210 +122,240 @@ function getPasteAreaText(element) {
 }
 
 /**
- * Splits raw pasted text into a 2-D array of cell values.
+ * Clean raw pasted text (e.g. stripping outer Excel quotes and unescaping double quotes).
  */
-function parseTsvRows(rawText) {
-  return rawText
-    .split(/\r?\n/)
-    .map((line) => line.trimEnd())
-    .filter((line) => line.trim().length > 0)
-    .map((line) => line.split('\t').map((cell) => cell.trim()));
-}
-
-/**
- * Checks whether the first row looks like a header row.
- */
-function isHeaderRow(cells) {
-  const joined = cells.join(' ').toLowerCase();
-  return (
-    joined.includes('priority') ||
-    joined.includes('incident') ||
-    joined.includes('jurisdiction') ||
-    joined.includes('application')
-  );
-}
-
-/**
- * Finds a column index by matching header name fragments.
- */
-function findColumnByHeader(headers, ...keywords) {
-  const lower = headers.map((h) => h.toLowerCase());
-  for (let i = 0; i < lower.length; i++) {
-    if (keywords.some((kw) => lower[i].includes(kw))) return i;
+function cleanRawInput(text) {
+  if (!text) return '';
+  let cleaned = text.trim();
+  
+  // Strip outer quotes if the entire text block was wrapped in quotes by Excel
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
   }
-  return -1;
+  // Unescape doubled double-quotes from Excel exports
+  cleaned = cleaned.replace(/""/g, '"');
+  return cleaned;
 }
 
 /**
- * Scores each column for how likely it holds priority values.
+ * Segregates raw pasted text into individual incident record chunks.
+ * Handles single-cell pastes containing multiple incidents, tab-separated lines,
+ * or space-separated sequences.
  */
-function scorePriorityColumn(rows) {
-  const scores = [];
-  const maxCols = Math.max(...rows.map((r) => r.length));
-  for (let col = 0; col < maxCols; col++) {
-    let hits = 0;
-    for (const row of rows) {
-      if (PRIORITIES.includes(normalisePriority(row[col]))) hits++;
-    }
-    scores[col] = hits;
-  }
-  return scores;
-}
+function extractRecordChunks(rawText) {
+  const text = cleanRawInput(rawText);
+  if (!text) return [];
 
-/**
- * Scores each column for jurisdiction codes.
- */
-function scoreJurisdictionColumn(rows) {
-  const scores = [];
-  const maxCols = Math.max(...rows.map((r) => r.length));
-  for (let col = 0; col < maxCols; col++) {
-    let hits = 0;
-    for (const row of rows) {
-      if (JURISDICTIONS.includes(extractJurisdiction(row[col]))) hits++;
-    }
-    scores[col] = hits;
-  }
-  return scores;
-}
+  // Check for ServiceNow incident numbers (e.g. INC5305979, INC1234567, INC...)
+  const incRegex = /\bINC\d+/gi;
+  const incMatches = [...text.matchAll(incRegex)];
 
-/**
- * Scores each column for application/system keywords.
- */
-function scoreApplicationColumn(rows) {
-  const scores = [];
-  const maxCols = Math.max(...rows.map((r) => r.length));
-  for (let col = 0; col < maxCols; col++) {
-    let hits = 0;
-    for (const row of rows) {
-      const val = (row[col] || '').toUpperCase();
-      if (val.includes('OUTAGE') || val.includes('DMS') || val.includes('DSCADA') || val.includes('SUPPORT')) {
-        hits++;
+  if (incMatches.length > 1) {
+    // Multiple INC numbers found in the text — split at each INC boundary
+    const chunks = [];
+    for (let i = 0; i < incMatches.length; i++) {
+      const startIdx = i === 0 ? 0 : incMatches[i].index;
+      const endIdx = i < incMatches.length - 1 ? incMatches[i + 1].index : text.length;
+      const chunkText = text.substring(startIdx, endIdx).trim();
+      if (chunkText) {
+        chunks.push(chunkText);
       }
     }
-    scores[col] = hits;
+    return chunks;
   }
-  return scores;
-}
 
-/** Returns the index of the highest-scoring column. */
-function indexOfMax(scores) {
-  let maxIdx = 0;
-  let maxVal = -1;
-  for (let i = 0; i < scores.length; i++) {
-    if (scores[i] > maxVal) {
-      maxVal = scores[i];
-      maxIdx = i;
+  // Split by line breaks if present
+  const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  const chunks = [];
+  for (const line of rawLines) {
+    const lineIncMatches = [...line.matchAll(/\bINC\d+/gi)];
+    if (lineIncMatches.length > 1) {
+      for (let i = 0; i < lineIncMatches.length; i++) {
+        const startIdx = i === 0 ? 0 : lineIncMatches[i].index;
+        const endIdx = i < lineIncMatches.length - 1 ? lineIncMatches[i + 1].index : line.length;
+        const chunkText = line.substring(startIdx, endIdx).trim();
+        if (chunkText) chunks.push(chunkText);
+      }
+    } else {
+      chunks.push(line);
     }
   }
-  return maxIdx;
-}
 
-/**
- * Detects which columns hold Priority, Application, and Jurisdiction.
- */
-function detectColumns(rows) {
-  if (!rows.length) {
-    return { priority: 3, application: 4, jurisdiction: 6 };
-  }
-
-  let dataRows = rows;
-  let priorityCol = -1;
-  let applicationCol = -1;
-  let jurisdictionCol = -1;
-
-  if (isHeaderRow(rows[0])) {
-    const headers = rows[0];
-    dataRows = rows.slice(1);
-    priorityCol = findColumnByHeader(headers, 'priority');
-    applicationCol = findColumnByHeader(headers, 'application', 'system', 'assignment group', 'service');
-    jurisdictionCol = findColumnByHeader(headers, 'jurisdiction', 'juris');
-  }
-
-  if (dataRows.length === 0) dataRows = rows;
-
-  if (priorityCol < 0) priorityCol = indexOfMax(scorePriorityColumn(dataRows));
-  if (applicationCol < 0) applicationCol = indexOfMax(scoreApplicationColumn(dataRows));
-  if (jurisdictionCol < 0) jurisdictionCol = indexOfMax(scoreJurisdictionColumn(dataRows));
-
-  // Avoid column collisions — reassign duplicates
-  const used = new Set();
-  for (const [key, val] of [
-    ['priority', priorityCol],
-    ['application', applicationCol],
-    ['jurisdiction', jurisdictionCol],
-  ]) {
-    if (used.has(val)) {
-      if (key === 'application') applicationCol = val + 1;
-      if (key === 'jurisdiction') jurisdictionCol = val + 2;
+  // Fallback: If only 1 chunk exists with no INC numbers, check for multiple Priority keywords
+  if (chunks.length === 1) {
+    const singleChunk = chunks[0];
+    const priorityRegex = /\b(Critical|High|Medium|Low)\b/gi;
+    const prioMatches = [...singleChunk.matchAll(priorityRegex)];
+    if (prioMatches.length > 1) {
+      const prioChunks = [];
+      for (let i = 0; i < prioMatches.length; i++) {
+        const startIdx = i === 0 ? 0 : prioMatches[i].index;
+        const endIdx = i < prioMatches.length - 1 ? prioMatches[i + 1].index : singleChunk.length;
+        const chunkText = singleChunk.substring(startIdx, endIdx).trim();
+        if (chunkText) prioChunks.push(chunkText);
+      }
+      return prioChunks;
     }
-    used.add(key === 'priority' ? priorityCol : key === 'application' ? applicationCol : jurisdictionCol);
   }
 
-  return { priority: priorityCol, application: applicationCol, jurisdiction: jurisdictionCol, dataRows };
+  return chunks;
 }
 
 /** Normalises a priority string to one of the four supported values. */
-function normalisePriority(value) {
-  if (!value) return '';
-  const cleaned = value.trim();
-  const match = PRIORITIES.find((p) => cleaned.toLowerCase() === p.toLowerCase());
-  return match || '';
+function normalisePriority(textOrCell) {
+  const str = (textOrCell || '').trim();
+  if (!str) return '';
+
+  if (/\b(1\s*-\s*)?critical\b/i.test(str) || /\bP1\b/i.test(str)) return 'Critical';
+  if (/\b(2\s*-\s*)?high\b/i.test(str) || /\bP2\b/i.test(str)) return 'High';
+  if (/\b(3\s*-\s*)?(medium|moderate)\b/i.test(str) || /\bP3\b/i.test(str)) return 'Medium';
+  if (/\b(4\s*-\s*)?low\b/i.test(str) || /\bP4\b/i.test(str)) return 'Low';
+
+  if (/^1$/i.test(str)) return 'Critical';
+  if (/^2$/i.test(str)) return 'High';
+  if (/^3$/i.test(str)) return 'Medium';
+  if (/^4$/i.test(str)) return 'Low';
+
+  for (const p of PRIORITIES) {
+    if (new RegExp(`\\b${p}\\b`, 'i').test(str)) {
+      return p;
+    }
+  }
+  return '';
 }
 
-/** Extracts a jurisdiction code from a cell value. */
-function extractJurisdiction(value) {
-  if (!value) return '';
-  const upper = value.trim().toUpperCase();
-  return JURISDICTIONS.find((j) => upper === j || upper.includes(j)) || '';
+/** Extracts a jurisdiction code from a cell value or text chunk. */
+function extractJurisdiction(textOrCell) {
+  const str = (textOrCell || '').trim();
+  if (!str) return '';
+
+  for (const j of JURISDICTIONS) {
+    if (new RegExp(`\\b${j}\\b`, 'i').test(str)) {
+      return j;
+    }
+  }
+  return '';
 }
 
 /**
- * Classifies an application/system cell as OMS, DMS, or Others.
+ * Classifies an application/system cell or chunk as OMS, DMS, or Others.
  */
-function classifyApplication(value) {
-  const upper = (value || '').toUpperCase();
-  if (upper.includes('OUTAGE MANAGEMENT SYSTEM')) return 'oms';
-  if (upper.includes('DMS')) return 'dms';
+function classifyApplication(textOrCell) {
+  const upper = (textOrCell || '').toUpperCase();
+  if (upper.includes('OUTAGE MANAGEMENT SYSTEM') || /\bOMS\b/.test(upper) || upper.includes('OMS_') || upper.includes('OMS-')) {
+    return 'oms';
+  }
+  if (
+    upper.includes('DISTRIBUTION MANAGEMENT SYSTEM') ||
+    /\bDMS\b/.test(upper) ||
+    upper.includes('DMS_') ||
+    upper.includes('DMS-') ||
+    upper.includes('DSCADA')
+  ) {
+    return 'dms';
+  }
   return 'others';
 }
 
 /**
- * Parses all incident rows and returns aggregated counts.
+ * Parses a single incident chunk to extract its Priority, Jurisdiction, and Application class.
  */
-function parseIncidents(rawText) {
-  const rows = parseTsvRows(rawText);
-  if (!rows.length) {
-    return {
-      incidents: [],
-      counts: createEmptyCounts(),
-      jurisdictions: createEmptyJurisdictions(),
-      warnings: ['No incident data found. Tables will show zero counts.'],
-    };
+function parseIncidentChunk(chunk) {
+  const cells = chunk.split('\t').map((c) => c.trim()).filter(Boolean);
+
+  let priority = '';
+  let jurisdiction = '';
+  let appClass = '';
+  let rawApp = '';
+
+  // Try cell-by-cell matching if tab cells exist
+  if (cells.length > 1) {
+    for (const cell of cells) {
+      const p = normalisePriority(cell);
+      if (p) {
+        priority = p;
+        break;
+      }
+    }
+
+    for (const cell of cells) {
+      const j = extractJurisdiction(cell);
+      if (j) {
+        jurisdiction = j;
+        break;
+      }
+    }
+
+    for (const cell of cells) {
+      const cls = classifyApplication(cell);
+      if (cls === 'oms' || cls === 'dms') {
+        appClass = cls;
+        rawApp = cell;
+        break;
+      }
+    }
+
+    if (!appClass) {
+      for (const cell of cells) {
+        if (
+          !normalisePriority(cell) &&
+          !extractJurisdiction(cell) &&
+          !/^\bINC\d+/i.test(cell) &&
+          !/^(new|on hold|in progress|resolved|closed|shift\s*\d+)$/i.test(cell)
+        ) {
+          rawApp = cell;
+          appClass = classifyApplication(cell);
+          break;
+        }
+      }
+    }
   }
 
-  const { priority: priorityCol, application: applicationCol, jurisdiction: jurisdictionCol, dataRows } =
-    detectColumns(rows);
+  // Fallback to searching full chunk text if cell-based matching didn't resolve priority or jurisdiction
+  if (!priority) {
+    priority = normalisePriority(chunk);
+  }
+
+  if (!jurisdiction) {
+    jurisdiction = extractJurisdiction(chunk);
+  }
+
+  if (!appClass) {
+    appClass = classifyApplication(rawApp || chunk);
+  }
+
+  return { priority, appClass, jurisdiction, raw: chunk };
+}
+
+/**
+ * Parses all incident rows/chunks and returns aggregated counts.
+ */
+function parseIncidents(rawText) {
+  const chunks = extractRecordChunks(rawText);
 
   const incidents = [];
   const counts = createEmptyCounts();
   const jurisdictions = createEmptyJurisdictions();
   const warnings = [];
 
-  for (const row of dataRows) {
-    const priority = normalisePriority(row[priorityCol]);
-    if (!priority) continue;
+  if (!chunks.length) {
+    warnings.push('No incident data found. Tables will show zero counts.');
+    return { incidents, counts, jurisdictions, warnings };
+  }
 
-    const appClass = classifyApplication(row[applicationCol]);
-    const jurisdiction = extractJurisdiction(row[jurisdictionCol]);
+  for (const chunk of chunks) {
+    const incident = parseIncidentChunk(chunk);
+    if (!incident.priority) continue;
 
-    incidents.push({ priority, appClass, jurisdiction, raw: row });
+    incidents.push(incident);
 
-    counts[priority][appClass]++;
-    counts[priority].transferred =
-      counts[priority].oms + counts[priority].dms + counts[priority].others;
+    counts[incident.priority][incident.appClass]++;
+    counts[incident.priority].transferred =
+      counts[incident.priority].oms + counts[incident.priority].dms + counts[incident.priority].others;
 
-    if (jurisdiction) {
-      jurisdictions[jurisdiction]++;
+    if (incident.jurisdiction) {
+      jurisdictions[incident.jurisdiction]++;
     }
   }
 
