@@ -405,8 +405,7 @@ function fmtCount(n) {
 }
 
 /**
- * Builds the main Shift Handover Report table HTML.
- * @param {boolean} forOutlook - Adds Outlook-friendly spacing when true (Duke Side).
+ * Builds the main Shift Handover Report table HTML (CTS / Gmail side).
  */
 function buildMainTable(counts, jurisdictions, forOutlook = false) {
   const priorityRows = PRIORITIES.map((priority) => {
@@ -435,7 +434,6 @@ function buildMainTable(counts, jurisdictions, forOutlook = false) {
   }).join('');
 
   const t = counts.totals;
-
   const tableMargin = forOutlook ? 'margin-bottom:0' : 'margin-bottom:12pt';
 
   return `
@@ -533,7 +531,7 @@ function buildMainTable(counts, jurisdictions, forOutlook = false) {
     </table>`;
 }
 
-/** Builds list items as HTML <li> elements. */
+/** Builds list items as HTML <li> elements (CTS side). */
 function buildListItems(items, highlight = false) {
   return items
     .map(
@@ -544,17 +542,7 @@ function buildListItems(items, highlight = false) {
 }
 
 /**
- * Spacer between tables — Outlook ignores margins but respects line-height blocks.
- */
-function buildOutlookTableSpacer() {
-  return `
-    <!--[if mso]><br style="mso-special-character:line-break" /><br style="mso-special-character:line-break" /><![endif]-->
-    <div style="line-height:16pt;font-size:16pt;mso-line-height-rule:exactly;">&nbsp;</div>`;
-}
-
-/**
- * Builds the informational table (Notes, Updates, Action items).
- * @param {boolean} forOutlook - Adjusts top spacing for Outlook (Duke Side).
+ * Builds the informational table (Notes, Updates, Action items) (CTS side).
  */
 function buildInfoTable(forOutlook = false) {
   const topMargin = forOutlook ? 'margin-top:0' : 'margin-top:6pt';
@@ -590,47 +578,356 @@ function buildInfoTable(forOutlook = false) {
 }
 
 /**
+ * Builds the official Duke (Outlook) Shift Handover Report table HTML.
+ */
+function buildDukeMainTable(counts, jurisdictions) {
+  const priorityRows = PRIORITIES.map((p, idx) => {
+    const c = counts[p];
+    const rowHeight = p === 'High' ? '1.35pt' : '7.85pt';
+    const irow = idx + 2;
+    const omsVal = c.oms > 0 ? c.oms : '&nbsp;';
+    const dmsVal = c.dms > 0 ? c.dms : '&nbsp;';
+    const othersVal = c.others > 0 ? c.others : '&nbsp;';
+    const transferredVal = c.transferred > 0 ? c.transferred : '&nbsp;';
+    return `
+ <tr style='mso-yfti-irow:${irow};height:${rowHeight}'>
+  <td width=138 valign=top style='width:103.5pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#F7CAAC;padding:0in 5.4pt 0in 5.4pt;height:${rowHeight};border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>${p}</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=129 colspan=2 valign=top style='width:96.75pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:${rowHeight};border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>${omsVal}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=221 colspan=2 valign=top style='width:165.45pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:${rowHeight};border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>${dmsVal}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=47 colspan=2 valign=top style='width:35.15pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:${rowHeight};border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>${othersVal}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=142 colspan=2 valign=top style='width:106.4pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:${rowHeight};border-color:currentcolor windowtext windowtext currentcolor'>
+  <p align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>&nbsp;</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=125 colspan=2 valign=top style='width:94.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:${rowHeight};border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>${transferredVal}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:${rowHeight}'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>`;
+  }).join('');
+
+  const t = counts.totals;
+
+  return `<table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=976
+ style='width:731.85pt;margin-left:.4pt;border-collapse:collapse;mso-yfti-tbllook:1184;mso-padding-alt:0in 0in 0in 0in'>
+ <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes;height:20.9pt'>
+  <td width=173 style='width:1.8in;border-top:solid windowtext 1.0pt;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:none;background:#C65911;padding:0in 0in 0in 0in;height:20.9pt;border-color:currentcolor'></td>
+  <td width=802 colspan=11 style='width:601.25pt;background:#C65911;padding:0in 5.4pt 0in 5.4pt;height:20.9pt;border-width:initial;border-style:initial;border-color:currentcolor'>
+  <p><b><span style='font-size:16.0pt;font-family:"Times New Roman",serif;color:black'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Shift Handover Report</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:20.9pt'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:1;height:8.8pt'>
+  <td width=173 rowspan=7 style='width:1.8in;border:solid windowtext 1.0pt;border-top:none;background:#FCE4D6;padding:0in 5.4pt 0in 5.4pt;height:8.8pt;border-color:currentcolor windowtext windowtext;border-image:none'>
+  <p class=MsoNormal><b><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;color:black'>SNOW Incidents Created</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=138 valign=top style='width:103.5pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#F7CAAC;padding:0in 5.4pt 0in 5.4pt;height:8.8pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Priority</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=129 colspan=2 valign=top style='width:96.75pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#F7CAAC;padding:0in 0in 0in 0in;height:8.8pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>No of tickets created for OMS</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=221 colspan=2 valign=top style='width:165.45pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#F7CAAC;padding:0in 0in 0in 0in;height:8.8pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>No of tickets created for DMS</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=47 colspan=2 valign=top style='width:35.15pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#F7CAAC;padding:0in 0in 0in 0in;height:8.8pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>No of tickets created for Others</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=142 colspan=2 valign=top style='width:106.4pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#F7CAAC;padding:0in 0in 0in 0in;height:8.8pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Tickets resolved by L1</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=125 colspan=2 valign=top style='width:94.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#F7CAAC;padding:0in 0in 0in 0in;height:8.8pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Tickets Transferred to L2</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:8.8pt'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+${priorityRows}
+ <tr style='mso-yfti-irow:6;height:7.85pt'>
+  <td width=138 valign=top style='width:103.5pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#DBDBDB;padding:0in 5.4pt 0in 5.4pt;height:7.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Total Ticket Counts</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=129 colspan=2 valign=top style='width:96.75pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:7.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>${t.oms > 0 ? t.oms : '&nbsp;'}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=221 colspan=2 valign=top style='width:165.45pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:7.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>${t.dms > 0 ? t.dms : '&nbsp;'}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=47 colspan=2 valign=top style='width:35.15pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:7.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>${t.others > 0 ? t.others : '&nbsp;'}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=142 colspan=2 valign=top style='width:106.4pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:7.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>&nbsp;</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=125 colspan=2 valign=top style='width:94.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:7.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p class=MsoNormal align=center style='text-align:center'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>${t.transferred > 0 ? t.transferred : '&nbsp;'}</span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:7.85pt'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:7;height:21.05pt'>
+  <td width=336 colspan=4 style='width:252.25pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 5.4pt 0in 5.4pt;height:21.05pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Number of UAC INC received :&nbsp;</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=465 colspan=7 style='width:349.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:21.05pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Number of UAC INC Resolved :</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:21.05pt'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:8;height:9.9pt'>
+  <td width=173 rowspan=2 style='width:1.8in;border:solid windowtext 1.0pt;border-top:none;background:#FCE4D6;padding:0in 5.4pt 0in 5.4pt;height:9.9pt;border-color:currentcolor windowtext windowtext;border-image:none'>
+  <p class=MsoNormal><b><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;color:black'>Jurisdiction </span></b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=336 colspan=4 style='width:252.25pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 5.4pt 0in 5.4pt;height:9.9pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>DEF:&nbsp; ${jurisdictions.DEF > 0 ? jurisdictions.DEF : ''}</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=465 colspan=7 style='width:349.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:9.9pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>&nbsp; DEP:&nbsp; ${jurisdictions.DEP > 0 ? jurisdictions.DEP : ''}</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:9.9pt'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:9;height:17.0pt'>
+  <td width=336 colspan=4 style='width:252.25pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.5pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 5.4pt 0in 5.4pt;height:17.0pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>DEM: ${jurisdictions.DEM > 0 ? jurisdictions.DEM : ''}</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=465 colspan=7 style='width:349.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.5pt;border-right:solid windowtext 1.0pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:17.0pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>&nbsp; <b>DEC: &nbsp;${jurisdictions.DEC > 0 ? jurisdictions.DEC : ''}</b></span><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:17.0pt'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:10;height:22.85pt'>
+  <td width=173 style='width:1.8in;border-top:none;border-left:solid windowtext 1.0pt;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.5pt;background:#FBE4D5;padding:0in 5.4pt 0in 5.4pt;height:22.85pt;border-color:currentcolor windowtext windowtext'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Model Push Activity</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=336 colspan=4 style='width:252.25pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.5pt;border-right:solid windowtext 1.5pt;background:#FCE4D6;padding:0in 5.4pt 0in 5.4pt;height:22.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Go/No-Go and Issue reported by DCC</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=465 colspan=7 style='width:349.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.5pt;border-right:solid windowtext 1.5pt;background:#FCE4D6;padding:0in 0in 0in 0in;height:22.85pt;border-color:currentcolor windowtext windowtext currentcolor'>
+  <p><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>&nbsp; Go and No issue reported</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in;height:22.85pt'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:11'>
+  <td width=173 style='width:1.8in;padding:0in 0in 0in 0in'></td>
+  <td width=200 colspan=2 style='width:150.05pt;padding:0in 0in 0in 0in'></td>
+  <td width=136 colspan=2 style='width:102.2pt;padding:0in 0in 0in 0in'></td>
+  <td width=151 style='width:113.45pt;padding:0in 0in 0in 0in'></td>
+  <td width=314 colspan=6 style='width:235.55pt;padding:0in 0in 0in 0in'></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'>
+  <p class=MsoNormal>&nbsp;</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:12'>
+  <td width=173 style='width:1.8in;padding:0in 0in 0in 0in'></td>
+  <td width=138 style='width:103.5pt;padding:0in 0in 0in 0in'></td>
+  <td width=62 style='width:46.55pt;padding:0in 0in 0in 0in'></td>
+  <td width=67 style='width:50.2pt;padding:0in 0in 0in 0in'></td>
+  <td width=69 style='width:52.0pt;padding:0in 0in 0in 0in'></td>
+  <td width=151 style='width:113.45pt;padding:0in 0in 0in 0in'></td>
+  <td width=1 style='width:1.0pt;padding:0in 0in 0in 0in'></td>
+  <td width=47 colspan=2 style='width:35.15pt;padding:0in 0in 0in 0in'></td>
+  <td width=142 colspan=2 style='width:106.4pt;padding:0in 0in 0in 0in'></td>
+  <td width=125 colspan=2 style='width:94.0pt;padding:0in 0in 0in 0in'></td>
+ </tr>
+ <tr style='mso-yfti-irow:13'>
+  <td width=173 style='width:129.75pt;padding:0in 0in 0in 0in'></td>
+  <td width=138 style='width:103.5pt;padding:0in 0in 0in 0in'></td>
+  <td width=62 style='width:46.5pt;padding:0in 0in 0in 0in'></td>
+  <td width=67 style='width:50.25pt;padding:0in 0in 0in 0in'></td>
+  <td width=69 style='width:51.75pt;padding:0in 0in 0in 0in'></td>
+  <td width=151 style='width:113.25pt;padding:0in 0in 0in 0in'></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'></td>
+  <td width=47 style='width:35.25pt;padding:0in 0in 0in 0in'></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'></td>
+  <td width=140 style='width:105.0pt;padding:0in 0in 0in 0in'></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'></td>
+  <td width=124 style='width:93.0pt;padding:0in 0in 0in 0in'></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'></td>
+ </tr>
+ <tr style='mso-yfti-irow:14'>
+  <td width=173 style='width:129.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=138 style='width:103.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=62 style='width:46.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=67 style='width:50.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=69 style='width:51.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=151 style='width:113.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=47 style='width:35.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=140 style='width:105.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=124 style='width:93.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+ </tr>
+ <tr style='mso-yfti-irow:15'>
+  <td width=173 style='width:129.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=138 style='width:103.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=62 style='width:46.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=67 style='width:50.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=69 style='width:51.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=151 style='width:113.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=47 style='width:35.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=140 style='width:105.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=124 style='width:93.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+ </tr>
+ <tr style='mso-yfti-irow:16'>
+  <td width=173 style='width:129.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=138 style='width:103.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=62 style='width:46.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=67 style='width:50.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=69 style='width:51.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=151 style='width:113.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=47 style='width:35.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=140 style='width:105.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=124 style='width:93.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+ </tr>
+ <tr style='mso-yfti-irow:17;mso-yfti-lastrow:yes'>
+  <td width=173 style='width:129.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=138 style='width:103.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=62 style='width:46.5pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=67 style='width:50.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=69 style='width:51.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=151 style='width:113.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=47 style='width:35.25pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=140 style='width:105.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=124 style='width:93.0pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+  <td width=1 style='width:.75pt;padding:0in 0in 0in 0in'><p class=MsoNormal><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></span></p></td>
+ </tr>
+</table>`;
+}
+
+/**
+ * Builds the official Duke (Outlook) Info Table HTML.
+ */
+function buildDukeInfoTable() {
+  return `<p class=MsoNormal><span lang=EN-IN style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-ansi-language:EN-IN'>&nbsp;</span><span style='font-size:11.0pt;font-family:Calibri,sans-serif'><o:p></o:p></span></p>
+
+<table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 align=left
+ width=1189 style='width:891.65pt;border-collapse:collapse;mso-yfti-tbllook:1184;mso-table-lspace:9.0pt;margin-left:6.75pt;mso-table-rspace:9.0pt;margin-right:6.75pt;mso-table-anchor-vertical:paragraph;mso-table-anchor-horizontal:column;mso-table-left:left;mso-padding-alt:0in 0in 0in 0in'>
+ <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes;height:7.4pt'>
+  <td width=965 rowspan=2 style='width:724.0pt;border:solid windowtext 1.0pt;border-bottom:solid windowtext 1.5pt;background:#F4B083;padding:0in 5.4pt 0in 5.4pt;height:7.4pt;border-image:none'>
+  <p style='mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><b><span style='font-size:10.0pt;font-family:"Times New Roman",serif;color:black'>Action for next shift members</span></b><span style='font-size:10.0pt;font-family:"Times New Roman",serif'><o:p></o:p></span></p>
+  </td>
+  <td width=224 style='width:167.65pt;padding:0in 0in 0in 0in;height:7.4pt'></td>
+ </tr>
+ <tr style='mso-yfti-irow:1;height:4.9pt'>
+  <td width=224 style='width:167.65pt;padding:0in 0in 0in 0in;height:4.9pt'></td>
+ </tr>
+ <tr style='mso-yfti-irow:2;mso-yfti-lastrow:yes;height:57.5pt'>
+  <td width=965 style='width:724.0pt;border-top:none;border-left:solid windowtext 1.5pt;border-bottom:none;border-right:solid windowtext 1.5pt;background:#FFF2CC;padding:0in 5.4pt 0in 5.4pt;height:57.5pt;border-color:currentcolor windowtext;border-image:none'>
+  <p class=MsoNormal style='mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>NOTE:- </span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  <ul type=disc style='margin:4pt 0;padding-left:24pt'>
+   <li class=MsoListParagraph style='mso-list:l2 level1 lfo1;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>Kindly Go through Helpdesk scenario and ALL DCC App List for Reporting Issue File which is send by Wayne in KT Mail and follow while creating any tickets.</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+   <li class=MsoListParagraph style='margin-top:0in;margin-bottom:0in;mso-list:l2 level1 lfo1;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span class=ui-provider><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>kindly confirm with user for Maps issue is ADMS Maps and Outages maps mostly ticket will go to Modeling team but confirm first with Wayne also once</span></span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+   <li class=MsoListParagraph style='margin-top:0in;margin-bottom:0in;mso-list:l2 level1 lfo1;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span class=ui-provider><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>If you received mail with subject  PROD: Calls not processed  which is being forwarded by Beena mail id, Please inform Beena,Kartik, Raghu or Duke_OMS_FL DL immediately</span></span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>.</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+  </ul>
+  <ul style='margin-top:0in;margin-bottom:0in;padding-left:24pt' type=disc>
+   <li class=MsoListParagraph style='margin-top:0in;margin-bottom:0in;mso-list:l1 level1 lfo2;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>Check new SOP of Model Push [Note :- After Model Push Ask DCC control room about everything up &amp; running or not.</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+  </ul>
+  <p class=MsoNormal style='mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Customer search, Device search &amp; Geographic Map)]</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  <ul type=disc style='margin:4pt 0;padding-left:24pt'>
+   <li class=MsoListParagraph style='mso-list:l0 level1 lfo3;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>One minor change in UAC jobs check the changes as updated in group</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+  </ul>
+  <p class=MsoNormal style='mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>&nbsp;</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  <p class=MsoNormal style='mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>UPDATES</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  <ul type=disc style='margin:4pt 0;padding-left:24pt'>
+   <li class=MsoListParagraph style='mso-list:l4 level1 lfo4;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>Strom is occur in DEF so be <b>PROACTIVE</b> also you guy s added in STORM 01/09/2024 Group so response in that Quickly. Also, PING that group in your chat.</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+   <li class=MsoListParagraph style='mso-list:l4 level1 lfo4;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>If you guys face any issue or need any kind of help regarding issues in your shift, then connect with Akansha/ Karthik or other SME S</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+   <li class=MsoListParagraph style='mso-list:l4 level1 lfo4;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>Please Notice or find out UAC job pattern and update to other shift members. (UAC job failed in 1 hr or 1hr 15 min etc like this )</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+   <li class=MsoListParagraph style='mso-list:l4 level1 lfo4;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>Please Follow same pattern (All team members) Put UAC tickets on Hold first then Resolve it after Iteration run successfully. </span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+   <li class=MsoListParagraph style='mso-list:l4 level1 lfo4;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black'>Also For Modelling issue sent ticket to representative group like modelling DEM, DEC ETC. </span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+  </ul>
+  <ul type=disc style='margin:4pt 0;padding-left:24pt'>
+   <li class=MsoListParagraph style='mso-list:l3 level1 lfo5;tab-stops:list .5in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span class=ui-provider><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:black;background:yellow'>UAC Update (Param shared in UAC group). We are added into DL in mail where we will receive job failure alert for  OMS_ADMS_STORED_PROCE_DEF  we have to monitor both Mail and Resolved incident kindly check UAC group</span></span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></li>
+  </ul>
+  <p class=MsoListParagraph style='margin-left:.25in;mso-element:frame;mso-element-frame-hspace:9.0pt;mso-element-wrap:around;mso-element-anchor-vertical:paragraph;mso-element-anchor-horizontal:column;mso-height-rule:exactly'><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black'>Please read Internal help desk DEF group message which is send by Beena</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+  </td>
+  <td width=224 style='width:167.65pt;padding:0in 0in 0in 0in;height:57.5pt'></td>
+ </tr>
+</table>`;
+}
+
+/**
  * Assembles the complete handover email HTML.
  * @param {string} side - SIDE.CTS (Gmail) or SIDE.DUKE (Outlook).
  */
 function generateEmailHtml(handoverShift, userName, counts, jurisdictions, side = SIDE.CTS) {
-  const isDuke = side === SIDE.DUKE;
+  if (side === SIDE.DUKE) {
+    const mainTable = buildDukeMainTable(counts, jurisdictions);
+    const infoTable = buildDukeInfoTable();
+    const signature = `<p class=MsoNormal><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-ansi-language:EN-GB'>&nbsp;</span><span style='font-size:11.0pt;font-family:Calibri,sans-serif'><o:p></o:p></span></p>
+<p class=MsoNormal><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-ansi-language:EN-GB'>&nbsp;</span><span style='font-size:11.0pt;font-family:Calibri,sans-serif'><o:p></o:p></span></p>
+<p class=MsoNormal><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-ansi-language:EN-GB'>&nbsp;</span><span style='font-size:11.0pt;font-family:Calibri,sans-serif'><o:p></o:p></span></p>
+<p class=MsoNormal><strong><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'>Thanks and Regards,</span></strong><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+<p class=MsoNormal><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-ansi-language:EN-GB'>${escapeHtml(userName)}</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>`;
 
-  const linkBlock = isDuke
-    ? ''
-    : `
+    return `<div class=WordSection1>
+<p style='margin-right:5.0pt'>H<span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black;mso-ansi-language:EN-GB'>i</span><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-ansi-language:EN-GB'> Sunil/Mohit,</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+<div style='border:none;border-top:solid #E1E1E1 1.0pt;padding:3.0pt 0in 0in 0in'>
+<p class=MsoNormal><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black;mso-ansi-language:EN-GB'>Please find below DCC Daily Report</span><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-ansi-language:EN-GB'>.</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+</div>
+<p class=MsoNormal style='background:white'><span lang=EN-GB style='font-size:11.0pt;font-family:"Calibri",sans-serif;color:black;mso-ansi-language:EN-GB'>&nbsp;</span><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+${mainTable}
+${infoTable}
+${signature}
+</div>`;
+  }
+
+  const linkBlock = `
     <p style="margin:0 0 12pt">
       <a href="${DAILY_REPORT_LINK}" target="_blank" style="color:blue;font-family:Calibri,sans-serif;font-size:12pt;background-color:rgb(243,242,241)">
         <b><u>&nbsp;DUKE_SHIFT HANDOVER.xlsx</u></b>
       </a>
     </p>`;
 
-  const greeting = isDuke
-    ? `
-    <p style="margin:0 0 4pt;font-family:Calibri,sans-serif;font-size:11pt;color:black">Hi Sunil / Mohit,</p>
-    <p style="margin:0 0 12pt;font-family:Calibri,sans-serif;font-size:11pt;color:black">Please find the below DCC Daily Report.</p>`
-    : `
+  const greeting = `
     <p style="margin:0 0 4pt;font-family:Calibri,sans-serif;color:black">Hi Team,</p>
     <p style="margin:0 0 12pt;font-family:Calibri,sans-serif;color:black">Please find below the handover for Shift ${handoverShift}</p>`;
 
-  const mainTable = buildMainTable(counts, jurisdictions, isDuke);
-  const tableSpacer = isDuke ? buildOutlookTableSpacer() : '';
-  const infoTable = buildInfoTable(isDuke);
+  const mainTable = buildMainTable(counts, jurisdictions, false);
+  const infoTable = buildInfoTable(false);
 
   const signature = `
     <p style="margin:16pt 0 4pt;font-family:Calibri,sans-serif;color:black">Thanks and Regards,</p>
     <p style="margin:0;font-family:Calibri,sans-serif;color:black"><b>${escapeHtml(userName)}</b></p>`;
 
-  const wrapperFont = isDuke
-    ? 'font-family:Calibri,Aptos,sans-serif;font-size:11pt;color:black'
-    : 'font-family:Calibri,Arial,sans-serif;font-size:12pt;color:black';
-
   return `
-    <div style="${wrapperFont}">
+    <div style="font-family:Calibri,Arial,sans-serif;font-size:12pt;color:black">
       ${linkBlock}
       ${greeting}
       ${mainTable}
-      ${tableSpacer}
       ${infoTable}
       ${signature}
     </div>`;
